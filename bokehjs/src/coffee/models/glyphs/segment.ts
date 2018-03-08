@@ -3,15 +3,22 @@ import {PointGeometry, SpanGeometry} from "core/geometry";
 import * as hittest from "core/hittest";
 import {NumberSpec} from "core/vectorization"
 import {LineMixinVector} from "core/property_mixins"
-import {RBush} from "core/util/spatial";
+import {Line} from "core/visuals"
+import {SpatialIndex, RBush} from "core/util/spatial";
 import {Context2d} from "core/util/canvas"
-import {Glyph, GlyphView} from "./glyph"
+import {Glyph, GlyphView, GlyphData} from "./glyph"
 import {Selection} from "../selections/selection";
+
+export interface SegmentData extends GlyphData {
+}
+
+export interface SegmentView extends SegmentData {}
 
 export class SegmentView extends GlyphView {
   model: Segment
+  visuals: Segment.Visuals
 
-  _index_data() {
+  protected _index_data(): SpatialIndex {
     const points = [];
     for (let i = 0, end = this._x0.length; i < end; i++) {
       if (!isNaN(this._x0[i] + this._x1[i] + this._y0[i] + this._y1[i])) {
@@ -28,12 +35,11 @@ export class SegmentView extends GlyphView {
     return new RBush(points);
   }
 
-  _render(ctx: Context2d, indices, {sx0, sy0, sx1, sy1}) {
+  protected _render(ctx: Context2d, indices: number[], {sx0, sy0, sx1, sy1}: SegmentData): void {
     if (this.visuals.line.doit) {
       for (const i of indices) {
-        if (isNaN(sx0[i]+sy0[i]+sx1[i]+sy1[i])) {
+        if (isNaN(sx0[i] + sy0[i] + sx1[i] + sy1[i]))
           continue;
-        }
 
         ctx.beginPath();
         ctx.moveTo(sx0[i], sy0[i]);
@@ -121,6 +127,10 @@ export namespace Segment {
     y0: NumberSpec
     x1: NumberSpec
     y1: NumberSpec
+  }
+
+  export interface Visuals extends Glyph.Visuals {
+    line: Line
   }
 }
 

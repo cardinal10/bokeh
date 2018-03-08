@@ -1,9 +1,10 @@
 /* XXX: partial */
 import {NumberSpec} from "core/vectorization"
 import {LineMixinVector} from "core/property_mixins"
-import {RBush} from "core/util/spatial";
+import {Line} from "core/visuals"
+import {SpatialIndex, RBush} from "core/util/spatial";
 import {Context2d} from "core/util/canvas"
-import {Glyph, GlyphView} from "./glyph"
+import {Glyph, GlyphView, GlyphData} from "./glyph"
 
 // Formula from: http://pomax.nihongoresources.com/pages/bezier/
 //
@@ -15,20 +16,26 @@ import {Glyph, GlyphView} from "./glyph"
 //         (with t = ((u-v) / (u-2v+w)), with {u = start, v = control, w = end})
 //       if control precedes start, min = bound, otherwise max = bound
 
-const _qbb = function(u, v, w) {
-  if (v === ((u+w)/2)) {
+function _qbb(u: number, v: number, w: number): [number, number] {
+  if (v == (u + w)/2)
     return [u, w];
-  } else {
-    const t = (u-v) / ((u-(2*v))+w);
-    const bd = (u*Math.pow((1-t), 2)) + (2*v*(1-t)*t) + (w*Math.pow(t, 2));
+  else {
+    const t = (u - v) / ((u - (2*v)) + w);
+    const bd = (u*Math.pow((1 - t), 2)) + (2*v*(1 - t)*t) + (w*Math.pow(t, 2));
     return [Math.min(u, w, bd), Math.max(u, w, bd)];
   }
-};
+}
+
+export interface QuadraticData extends GlyphData {
+}
+
+export interface QuadraticView extends QuadraticData {}
 
 export class QuadraticView extends GlyphView {
   model: Quadratic
+  visuals: Quadratic.Visuals
 
-  _index_data() {
+  protected _index_data(): SpatialIndex {
     const points = [];
     for (let i = 0, end = this._x0.length; i < end; i++) {
       if (isNaN(this._x0[i] + this._x1[i] + this._y0[i] + this._y1[i] + this._cx[i] + this._cy[i])) {
@@ -44,12 +51,11 @@ export class QuadraticView extends GlyphView {
     return new RBush(points);
   }
 
-  _render(ctx: Context2d, indices, {sx0, sy0, sx1, sy1, scx, scy}) {
+  protected _render(ctx: Context2d, indices: number[], {sx0, sy0, sx1, sy1, scx, scy}: QuadraticData): void {
     if (this.visuals.line.doit) {
       for (const i of indices) {
-        if (isNaN(sx0[i]+sy0[i]+sx1[i]+sy1[i]+scx[i]+scy[i])) {
+        if (isNaN(sx0[i] + sy0[i] + sx1[i] + sy1[i] + scx[i] + scy[i]))
           continue;
-        }
 
         ctx.beginPath();
         ctx.moveTo(sx0[i], sy0[i]);
@@ -76,6 +82,10 @@ export namespace Quadratic {
     y1: NumberSpec
     cx: NumberSpec
     cy: NumberSpec
+  }
+
+  export interface Visuals extends Glyph.Visuals {
+    line: Line
   }
 }
 

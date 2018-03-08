@@ -1,16 +1,23 @@
 /* XXX: partial */
 import {LineMixinVector, FillMixinVector} from "core/property_mixins"
+import {Line, Fill} from "core/visuals"
 import {RBush} from "core/util/spatial";
 import {Context2d} from "core/util/canvas"
-import {Glyph, GlyphView} from "./glyph";
+import {Glyph, GlyphView, GlyphData} from "./glyph";
 import {PointGeometry, SpanGeometry, RectGeometry} from "core/geometry";
 import * as hittest from "core/hittest";
 import {Selection} from "../selections/selection";
 
 // Not a publicly exposed Glyph, exists to factor code for bars and quads
 
+export interface BoxData extends GlyphData {
+}
+
+export interface BoxView extends BoxData {}
+
 export abstract class BoxView extends GlyphView {
   model: Box
+  visuals: Box.Visuals
 
   _index_box(len): RBush {
     const points = [];
@@ -26,11 +33,11 @@ export abstract class BoxView extends GlyphView {
     return new RBush(points);
   }
 
-  _render(ctx: Context2d, indices, {sleft, sright, stop, sbottom}) {
+  protected _render(ctx: Context2d, indices: number[],
+                    {sleft, sright, stop, sbottom}: BoxData): void {
     for (const i of indices) {
-      if (isNaN(sleft[i]+stop[i]+sright[i]+sbottom[i])) {
+      if (isNaN(sleft[i] + stop[i] + sright[i] + sbottom[i]))
         continue;
-      }
 
       if (this.visuals.fill.doit) {
         this.visuals.fill.set_vectorize(ctx, i);
@@ -92,6 +99,11 @@ export namespace Box {
   export interface Mixins extends LineMixinVector, FillMixinVector {}
 
   export interface Attrs extends Glyph.Attrs, Mixins {}
+
+  export interface Visuals extends Glyph.Visuals {
+    line: Line
+    fill: Fill
+  }
 }
 
 export interface Box extends Box.Attrs {}

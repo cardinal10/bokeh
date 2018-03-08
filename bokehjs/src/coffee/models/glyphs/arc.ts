@@ -1,29 +1,36 @@
 /* XXX: partial */
-import {XYGlyph, XYGlyphView} from "./xy_glyph";
+import {XYGlyph, XYGlyphView, XYGlyphData} from "./xy_glyph";
 import {DistanceSpec, AngleSpec} from "core/vectorization"
 import {LineMixinVector} from "core/property_mixins"
+import {Line} from "core/visuals"
 import {Direction} from "core/enums"
 import * as p from "core/properties"
 import {Context2d} from "core/util/canvas"
 
+export interface ArcData extends XYGlyphData {
+}
+
+export interface ArcView extends ArcData {}
+
 export class ArcView extends XYGlyphView {
   model: Arc
+  visuals: Arc.Visuals
 
-  _map_data() {
-    if (this.model.properties.radius.units === "data") {
+  protected _map_data(): void {
+    if (this.model.properties.radius.units === "data")
       return this.sradius = this.sdist(this.renderer.xscale, this._x, this._radius);
-    } else {
+    else
       return this.sradius = this._radius;
-    }
   }
 
-  _render(ctx: Context2d, indices, {sx, sy, sradius, _start_angle, _end_angle}) {
+  protected _render(ctx: Context2d, indices: number[],
+                    {sx, sy, sradius, _start_angle, _end_angle}: ArcData): void {
     if (this.visuals.line.doit) {
       const direction = this.model.properties.direction.value();
+
       for (const i of indices) {
-        if (isNaN(sx[i]+sy[i]+sradius[i]+_start_angle[i]+_end_angle[i])) {
+        if (isNaN(sx[i] + sy[i] + sradius[i] + _start_angle[i] + _end_angle[i]))
           continue;
-        }
 
         ctx.beginPath();
         ctx.arc(sx[i], sy[i], sradius[i], _start_angle[i], _end_angle[i], direction);
@@ -47,6 +54,10 @@ export namespace Arc {
     radius: DistanceSpec
     start_angle: AngleSpec
     end_angle: AngleSpec
+  }
+
+  export interface Visuals extends XYGlyph.Visuals {
+    line: Line
   }
 }
 
