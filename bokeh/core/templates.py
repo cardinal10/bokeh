@@ -17,10 +17,22 @@ models in various ways.
 from __future__ import absolute_import
 
 import json
+import sys, os, bokeh.core
+from jinja2 import Environment, Markup, FileSystemLoader
 
-from jinja2 import Environment, PackageLoader, Markup
+if getattr(sys, 'frozen', False):
+  # we are running in a bundle  
+  """
+  this sets the _env to look in the working folder's \_templates directory
+  which contains the required .html files (have to add this during compile)
+  """
+  templatedir = sys._MEIPASS
 
-_env = Environment(loader=PackageLoader('bokeh.core', '_templates'))
+else:
+  # we are running in a normal Python environment
+  templatedir = os.path.dirname(bokeh.core.__file__)
+
+_env = Environment(loader=FileSystemLoader(templatedir + '\\_templates'))
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 
 JS_RESOURCES = _env.get_template("js_resources.html")
